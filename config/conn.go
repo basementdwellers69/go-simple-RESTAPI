@@ -1,4 +1,4 @@
-package conn
+package config
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ var db *gorm.DB
 var dbErr error
 
 func GetConnection() *gorm.DB {
-	dsn := "host=localhost user=postgres password=root dbname=postgres port=5432 sslmode=disable TimeZone=Asia/Singapore"
+	dsn := "host="+host+" user="+user+" password="+pass+" dbname="+dbName+" port="+port+" sslmode=disable TimeZone=Asia/Singapore"
 	db, dbErr = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if dbErr != nil{
 		panic(dbErr.Error())

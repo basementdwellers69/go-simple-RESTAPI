@@ -1,39 +1,20 @@
-package modules
+package repository
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"sqlcTest/conn"
+	"sqlcTest/config"
+	"sqlcTest/domain"
+	"sqlcTest/dto"
 	"strings"
 	"time"
 )
 
-type Accounts struct {
-	UserId		int			`gorm:"primaryKey"`
-	Username	string		`json:"username"`
-	Password	string		`json:"password"`
-	Email		string		`json:"email"`
-	CreatedOn	time.Time	`json:"created_on"`
-	LastLogin	time.Time	`json:"last_login"`
-}
-
-type CreateAccounts struct {
-	Username	string		`json:"username" binding:"required"`
-	Password	string		`json:"password" binding:"required"`
-	Email		string		`json:"email" binding:"required"`
-}
-type EditAccounts struct {
-	ID			int			`json:"user_id"`
-	Username	string		`json:"username"`
-	Password	string		`json:"password"`
-	Email		string		`json:"email"`
-}
-
-var db = conn.GetConnection()
+var db = config.GetConnection()
 
 func GetAccount(c *gin.Context) {
-	var accounts []Accounts
+	var accounts []domain.Accounts
 	if err := db.Find(&accounts).Error; err != nil {
 		c.AbortWithStatus(404)
 		fmt.Println(err)
@@ -44,7 +25,7 @@ func GetAccount(c *gin.Context) {
 
 func AddAccount(c *gin.Context) {
 
-	var input CreateAccounts
+	var input dto.CreateAccounts
 	//validate input
 	if err := c.ShouldBindJSON(&input);err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -52,7 +33,7 @@ func AddAccount(c *gin.Context) {
 	}
 
 	//create Input
-	account := Accounts{Username: input.Username, Password: input.Password, Email: input.Email,CreatedOn: time.Now(), LastLogin: time.Now()}
+	account := domain.Accounts{Username: input.Username, Password: input.Password, Email: input.Email,CreatedOn: time.Now(), LastLogin: time.Now()}
 	if err := db.Create(&account).Error; err != nil {
 		c.AbortWithStatus(404)
 		fmt.Println(err)
@@ -63,7 +44,7 @@ func AddAccount(c *gin.Context) {
 
 func GetAccountId(c *gin.Context) {
 	id := c.Params.ByName("id")
-	var account Accounts
+	var account domain.Accounts
 	if err := db.Where("user_id = ?", id).First(&account).Error; err != nil {
 		c.AbortWithStatus(404)
 		fmt.Println(err)
@@ -74,7 +55,7 @@ func GetAccountId(c *gin.Context) {
 
 func DelAccount(c *gin.Context) {
 	id := c.Params.ByName("id")
-	var account Accounts
+	var account domain.Accounts
 	if err := db.Where("user_id = ?", id).Delete(&account).Error; err != nil {
 		c.AbortWithStatus(404)
 		fmt.Println(err)
@@ -87,7 +68,7 @@ func EditAccount(c *gin.Context) {
 	temp := c.Params.ByName("type")
 	types :=	strings.Split(temp, ",")
 
-	var input EditAccounts
+	var input dto.EditAccounts
 	//validate input
 	if err := c.ShouldBindJSON(&input);err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -95,9 +76,9 @@ func EditAccount(c *gin.Context) {
 	}
 
 	//UPDATE DB
-	account := Accounts{Username: input.Username, Password: input.Password, Email: input.Email,CreatedOn: time.Now(), LastLogin: time.Now()}
+	account := domain.Accounts{Username: input.Username, Password: input.Password, Email: input.Email,CreatedOn: time.Now(), LastLogin: time.Now()}
 	if len(types) == 1{
-		if err := db.Model(&Accounts{}).Where("user_id = ?", input.ID).Omit(types[0], "created_on").Updates(&account).Error; err != nil {
+		if err := db.Model(&domain.Accounts{}).Where("user_id = ?", input.ID).Omit(types[0], "created_on").Updates(&account).Error; err != nil {
 			c.AbortWithStatus(404)
 			fmt.Println(err)
 		} else {
@@ -105,7 +86,7 @@ func EditAccount(c *gin.Context) {
 		}
 		return
 	}else if len(types) == 2{
-		if err := db.Model(&Accounts{}).Where("user_id = ?", input.ID).Omit(types[0],types[1], "created_on").Updates(&account).Error; err != nil {
+		if err := db.Model(&domain.Accounts{}).Where("user_id = ?", input.ID).Omit(types[0],types[1], "created_on").Updates(&account).Error; err != nil {
 			c.AbortWithStatus(404)
 			fmt.Println(err)
 		} else {
